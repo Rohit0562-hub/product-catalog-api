@@ -4,7 +4,30 @@ const Product = require('../models/Product');
 
 router.get('/', async (req, res) => {
     try {
-        const products = await Product.find().populate('category');
+        const { search, category, minPrice, maxPrice, inStock } = req.query;
+
+        const filter = {};
+
+        if (search) {
+            filter.name = { $regex: search, $options: 'i'};
+        }
+
+        if (category) {
+            filter.category = category;
+        }
+
+        if (minPrice || maxPrice) {
+            filter.price = {};
+
+            if (minPrice) filter.price.$gte = Number(minPrice);
+            if (maxPrice) filter.price.$lte = Number(maxPrice);
+        }
+
+        if (inStock !== undefined){
+            filter.inStock = inStock === 'true';
+        }
+        
+        const products = await Product.find(filter).populate('category');
         res.json(products);
     } catch (error) {
         res.status(500).json({error: 'Failed to fetch the products'});
